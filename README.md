@@ -1,5 +1,261 @@
-# exercise-assigner
-학습에 소그룹을 배정하고, 연습문제를 적절히 배정하는 코드
+# Student Grouping & Problem Assignment Automation (Julia)
+
+Automate **student group formation** and **problem assignment** with fair and reproducible results.
+
+* Use it to **only create groups**, or
+* **Assign problems** to groups and students.
+* Works in terminal (CLI), Jupyter/REPL, and supports **CSV exports**.
+
+> **Guarantee:** No problem is duplicated within the same group or for the same student.
+> (To keep this guarantee, set `copies ≤ number of groups`.)
+
+---
+
+## 1. Requirements
+
+* **Julia 1.9+** (recommended)
+* Script file: `assign.jl`
+* Input files (UTF-8 plain text)
+
+  * `students.txt` : one student name per line
+  * `problems.txt` : one problem name per line
+
+Example:
+
+```
+# students.txt
+Alice
+Bob
+Charlie
+...
+
+# problems.txt
+Q1
+Q2
+Q3
+...
+```
+
+---
+
+## 2. Quick Start (CLI)
+
+### 2.1 Groups only
+
+By number of groups:
+
+```bash
+julia assign.jl --students students.txt --groups 4 --seed 42
+```
+
+By maximum group size:
+
+```bash
+julia assign.jl --students students.txt --size 5 --seed 42
+```
+
+Export CSV:
+
+```bash
+julia assign.jl --students students.txt --groups 4 --csv groups.csv
+```
+
+### 2.2 Problem assignment
+
+Default (no duplication; groups auto):
+
+```bash
+julia assign.jl --students students.txt --problems problems.txt --week 3 --seed 42
+```
+
+Fixed 3 groups, 2× copies, weighted by group size, save CSV:
+
+```bash
+julia assign.jl --students students.txt --problems problems.txt --week 3 \
+  --groups 3 --copies 2 --weighted --csv assignment_w3.csv --seed 42
+```
+
+CSV only (no console print):
+
+```bash
+julia assign.jl --students students.txt --problems problems.txt --week 3 \
+  --groups 3 --csv out.csv --no-print
+```
+
+> macOS: `chmod +x assign.jl` then `./assign.jl ...`
+> Windows: run `julia assign.jl ...`
+
+---
+
+## 3. CLI Options
+
+**Input**
+
+* `--students PATH` *(required)*
+* `--problems PATH` *(required in assignment mode)*
+* `--week W` *(required in assignment mode)*
+
+**Group specification** (choose one; required in *group-only* mode, optional in assignment mode)
+
+* `--groups N` : number of groups
+* `--size M` : max members per group (N calculated automatically)
+
+**Assignment**
+
+* `--copies C` : replication factor (default 1). **Must satisfy `C ≤ groups`** to avoid duplicates.
+* `--weighted` : distribute total problem count proportional to group sizes (else uniform)
+
+**Output/Other**
+
+* `--csv PATH` : save results to CSV
+
+  * Group-only: `group,student`
+  * Assignment: `week,group,student,problems`
+* `--seed SEED` : shuffle seed for reproducibility
+* `--no-print` : suppress console output
+* `--help` : print usage
+
+---
+
+## 4. CSV Formats
+
+Assignment mode:
+
+```csv
+week,group,student,problems
+3,1,"Alice","Q1 | Q5"
+3,1,"Bob","Q3"
+3,2,"Charlie","Q2 | Q4"
+...
+```
+
+Group-only mode:
+
+```csv
+group,student
+1,"Alice"
+1,"Bob"
+2,"Charlie"
+...
+```
+
+---
+
+## 5. Jupyter/REPL Example
+
+```julia
+include("assign.jl")
+
+students = ["Alice","Bob","Charlie","Dana","Evan","Fay","Gail","Hank","Ivy","Jack"]
+problems = ["P$(i)" for i in 1:7]
+week = 3
+
+# 1) Groups only
+G = make_groups(students; n=3, seed=42)
+
+# 2) Assignment (no replication)
+res = arrange(students, (week, problems); n=3, copies=1, seed=42)
+
+# 3) Assignment (2×, weighted)
+res2 = arrange(students, (week, problems); n=3, copies=2, quotas_mode=:weighted, seed=42, print_output=false)
+
+# 4) Minimal CSV export
+open("assignment.csv","w") do io
+    println(io, "week,group,student,problems")
+    for r in res
+        println(io, string(week, ",", r.group, ",", "\"", r.student, "\"", ",", "\"", join(r.problems, " | "), "\""))
+    end
+end
+```
+
+---
+
+## 6. How It Works (Brief)
+
+1. **Group formation:** shuffle students, split as evenly as possible.
+2. **Problems → groups:** compute per-group quotas (uniform or weighted). Assign each problem's copies across **different groups only** using multi-pass + swap to avoid collisions.
+3. **Within-group → students:** round-robin distribution of unique problems to students (no duplicates per student).
+
+Constraint: to avoid duplicates, ensure `copies ≤ groups`.
+
+---
+
+## 7. FAQ / Troubleshooting
+
+* `copies ≤ groups` error → increase groups or reduce copies.
+* Empty input files → check paths/encoding (UTF-8) and blank lines.
+* Reproducibility → set `--seed`.
+* Encoding in Jupyter → standard `open("w")` is UTF-8 by default; no extra package needed.
+* Empty groups → ensure `groups ≤ number of students`.
+
+---
+
+## 8. Public API (for reuse)
+
+```julia
+make_groups(
+    students::Vector{String};
+    n::Union{Nothing,Int}=nothing,
+    size::Union{Nothing,Int}=nothing,
+    seed::Union{Nothing,Int}=nothing,
+    print_output::Bool=true
+) -> Vector{Vector{String}}
+```
+
+```julia
+arrange(
+    students::Vector{String},
+    P::Tuple{<:Any, Vector{String}};   # (week, problems)
+    n::Union{Nothing,Int}=nothing,     # default: max(2, floor(sqrt(k)))
+    copies::Int=1,
+    seed::Union{Nothing,Int}=nothing,
+    quotas_mode::Symbol=:balanced,     # :balanced | :weighted
+    print_output::Bool=true
+) -> Vector{NamedTuple{(:group,:student,:problems),Tuple{Int,String,Vector{String}}}}
+```
+
+---
+
+## 9. Example Console Output
+
+```
+Week 3 Assignment (×2)
+
+Group 1 (size: 4) - problems: 5
+  Alice - Q1 / Q5
+  Bob   - Q3
+  Charlie - Q2
+  Dana    - Q4
+
+Group 2 (size: 3) - problems: 5
+  Evan - Q7
+  Fay  - Q6
+  Gail - Q1 / Q3
+...
+```
+
+---
+
+## 10. Tips
+
+* Open CSVs directly with Excel.
+* Record `--seed` for reproducible releases.
+* Keep small sample inputs + expected outputs for PR checks / CI.
+
+---
+
+## 11. Contributing
+
+* Open issues for bugs/ideas.
+* In PRs, include sample inputs/expected outputs and update README if behavior changes.
+
+---
+
+## 12. License
+
+MIT — see the `LICENSE` file in the repository.
+
+---
 
 # 학생 조 편성 & 문제 배정 자동화 (Julia)
 
@@ -9,7 +265,7 @@
 * **문제를 조/학생에게 배정**할 수 있습니다.
 * 터미널(커맨드라인), 주피터노트북, REPL 모두에서 사용 가능하며 **CSV 저장**을 지원합니다.
 
-> **핵심 보장:** 같은 문제가 **같은 조/같은 학생에게 중복되지 않도록** 배정합니다.
+> **주요 기능:** 같은 문제가 **같은 조/같은 학생에게 중복되지 않도록** 배정합니다.
 > (단, 복제 배수 `copies`는 **그룹 수 `n` 이하**여야 중복 없는 배정이 가능합니다.)
 
 ---
@@ -267,4 +523,4 @@ arrange(
 
 ## 12. 라이선스
 
-루트에 `LICENSE` 파일을 추가하세요(예: MIT).
+MIT — 자세한 내용은 저장소의 'LICENSE' 파일을 참조하세요.
