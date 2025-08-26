@@ -1,6 +1,7 @@
 # Student Grouping & Problem Assignment Automation (Julia)
 
 Automate **student group formation** and **problem assignment** with fair and reproducible results.
+This project was developed with assistance from an LLM; human-authored final structure, editing, integration, and review by Yechan Lee.
 
 * Use it to **only create groups**, or
 * **Assign problems** to groups and students.
