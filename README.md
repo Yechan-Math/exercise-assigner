@@ -257,6 +257,9 @@ MIT — see the `LICENSE` file in the repository.
 
 ---
 
+<details>
+<summary><strong>한국어 메뉴얼</strong></summary>
+
 # 학생 조 편성 & 문제 배정 자동화 (Julia)
 
 수업 준비 시간을 줄이고, 공정하고 재현 가능한 방식으로 **학생 조 편성**과 **문제 배정**을 자동화하는 줄리아 스크립트입니다.
@@ -524,3 +527,4 @@ arrange(
 ## 12. 라이선스
 
 MIT — 자세한 내용은 저장소의 'LICENSE' 파일을 참조하세요.
+</details>
