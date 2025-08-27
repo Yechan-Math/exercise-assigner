@@ -46,13 +46,13 @@ Q3
 By number of groups:
 
 ```bash
-julia assign.jl --students students.txt --groups 4 --seed 42
+julia assign.jl --students students.txt --groups 4
 ```
 
 By maximum group size:
 
 ```bash
-julia assign.jl --students students.txt --size 5 --seed 42
+julia assign.jl --students students.txt --size 5
 ```
 
 Export CSV:
@@ -66,14 +66,14 @@ julia assign.jl --students students.txt --groups 4 --csv groups.csv
 Default (no duplication; groups auto):
 
 ```bash
-julia assign.jl --students students.txt --problems problems.txt --week 3 --seed 42
+julia assign.jl --students students.txt --problems problems.txt --week 3
 ```
 
 Fixed 3 groups, 2× copies, weighted by group size, save CSV:
 
 ```bash
 julia assign.jl --students students.txt --problems problems.txt --week 3 \
-  --groups 3 --copies 2 --weighted --csv assignment_w3.csv --seed 42
+  --groups 3 --copies 2 --weighted --csv assignment_w3.csv
 ```
 
 CSV only (no console print):
@@ -152,13 +152,13 @@ problems = ["P$(i)" for i in 1:7]
 week = 3
 
 # 1) Groups only
-G = make_groups(students; n=3, seed=42)
+G = make_groups(students; n=3)
 
 # 2) Assignment (no replication)
-res = arrange(students, (week, problems); n=3, copies=1, seed=42)
+res = arrange(students, (week, problems); n=3, copies=1)
 
 # 3) Assignment (2×, weighted)
-res2 = arrange(students, (week, problems); n=3, copies=2, quotas_mode=:weighted, seed=42, print_output=false)
+res2 = arrange(students, (week, problems); n=3, copies=2, quotas_mode=:weighted, print_output=false)
 
 # 4) Minimal CSV export
 open("assignment.csv","w") do io
@@ -308,13 +308,13 @@ Q3
 **조 개수로 지정**
 
 ```bash
-julia assign.jl --students students.txt --groups 4 --seed 42
+julia assign.jl --students students.txt --groups 4
 ```
 
 **조당 최대 인원으로 지정**
 
 ```bash
-julia assign.jl --students students.txt --size 5 --seed 42
+julia assign.jl --students students.txt --size 5
 ```
 
 **CSV로 저장**
@@ -328,14 +328,14 @@ julia assign.jl --students students.txt --groups 4 --csv groups.csv
 **그대로 분배(복제 X, 기본값) + 그룹 수 자동**
 
 ```bash
-julia assign.jl --students students.txt --problems problems.txt --week 3 --seed 42
+julia assign.jl --students students.txt --problems problems.txt --week 3
 ```
 
 **조 3개 고정, 2배 배정, 인원 비례, CSV 저장**
 
 ```bash
 julia assign.jl --students students.txt --problems problems.txt --week 3 \
-  --groups 3 --copies 2 --weighted --csv assignment_w3.csv --seed 42
+  --groups 3 --copies 2 --weighted --csv assignment_w3.csv
 ```
 
 **콘솔 출력 없이 CSV만 저장**
@@ -417,13 +417,13 @@ problems = ["P$(i)" for i in 1:7]
 week = 3
 
 # 1) 조만 편성
-G = make_groups(students; n=3, seed=42)
+G = make_groups(students; n=3)
 
 # 2) 문제 배정 (그대로 분배)
-res = arrange(students, (week, problems); n=3, copies=1, seed=42)
+res = arrange(students, (week, problems); n=3, copies=1)
 
 # 3) 2배 배정 + 인원 비례
-res2 = arrange(students, (week, problems); n=3, copies=2, quotas_mode=:weighted, seed=42, print_output=false)
+res2 = arrange(students, (week, problems); n=3, copies=2, quotas_mode=:weighted, print_output=false)
 
 # 4) 간단 CSV 저장(주피터 내부)
 open("assignment.csv","w") do io
